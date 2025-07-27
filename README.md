@@ -30,6 +30,11 @@ Website Deployment
 
 ---
 
+Features Coming Soon
+- 📜 Infinite scroll Wheel - Explore or revisit older posts on the home page
+
+---
+
 ### 🖼️Demos/Screenshots
 <img src="static/images/Aptura 2.png" width="1200" />
 <img src="static/images/Aptura 1.png" width="1200" />
