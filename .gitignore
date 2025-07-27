@@ -1,8 +1,12 @@
-# Environment variables
-.env
-
-# Python
+*.pyc
 __pycache__/
+db.sqlite3
+.env
+*.env
+.env.local
+.env.production
+media/
+staticfiles/
 
 
 
