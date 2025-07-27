@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout - WebName</title>
+    <link rel="stylesheet" href="{% static 'css/Home Page CSS Code.css' %}" />
+</head>
+<body>
+    <header>
+        <h1>Logged Out</h1>
+        <nav>
+            <a href="{% url 'index' %}">Home</a>
+            <a href="{% url 'login' %}">Login</a>
+        </nav>
+    </header>
+
+    <section id="hero">
+        <h2>You have been successfully logged out</h2>
+        <p>Thank you for using our platform!</p>
+        <div style="margin-top: 20px;">
+            <a href="{% url 'index' %}" class="btn">Return to Home</a>
+            <a href="{% url 'login' %}" class="btn">Login Again</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Your Name. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Auto-redirect to home page after 3 seconds
+        setTimeout(function() {
+            window.location.href = "{% url 'index' %}";
+        }, 3000);
+    </script>
+</body>
+</html>

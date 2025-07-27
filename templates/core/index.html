@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Aptura</title>
+  <link rel="stylesheet" href="{% static 'css/welcome.css' %}" />
+</head>
+<body>
+  <div class="welcome-container">
+    <div class="main-content">
+      <h1 class="brand-title">Aptura</h1>
+      <p class="tagline">Find out what will inspire you today</p>
+      
+      {% if user.is_authenticated %}
+        <a href="{% url 'home' %}" class="center-btn enter-btn">Enter</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="center-btn login-btn">Login</a>
+      {% endif %}
+    </div>
+    
+    <footer class="welcome-footer">
+      <div class="footer-buttons">
+        <a href="#welcome" class="footer-btn">Welcome</a>
+        <a href="#about" class="footer-btn">About</a>
+        <a href="#contact" class="footer-btn">Contact</a>
+      </div>
+    </footer>
+  </div>
+  
+  <script src="{% static 'js/welcome.js' %}"></script>
+</body>
+</html>

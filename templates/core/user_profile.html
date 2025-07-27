@@ -1,0 +1,149 @@
+{% load static %}
+{% load genre_filters %}
+<!DOCTYPE html>
+<link rel="stylesheet" href="{% static 'css/profile.css' %}" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ user.username }} - Aptura</title>
+</head>
+<body>
+
+  <header>
+    <nav class="main-nav">
+      <div class="logo">Aptura</div>
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'create_post' %}">Post</a>
+          <a href="{% url 'profile' %}">My Profile</a>
+        {% else %}
+          <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+
+  <section class="profile-header">
+    <div class="profile-info">
+      <div class="profile-image">
+        {% if user.profile and user.profile.profile_photo %}
+          <img src="{{ user.profile.profile_photo.url }}" alt="Profile Picture" class="avatar">
+        {% else %}
+          <img src="{% static 'images/default-avatar.jpg' %}" alt="Profile Picture" class="avatar">
+        {% endif %}
+      </div>
+      <div class="profile-details">
+        <div class="profile-top">
+          <h1 class="username">{{ user.username }}</h1>
+          {% if user != request.user and request.user.is_authenticated %}
+            <button class="follow-btn" id="followBtn" data-username="{{ user.username }}">
+              {% if is_following %}Unfollow{% else %}Follow{% endif %}
+            </button>
+          {% endif %}
+        </div>
+        <div class="profile-stats">
+          <span><strong>{{ user_posts.count }}</strong> posts</span>
+        </div>
+        <div class="profile-bio">
+          <h3>{{ user.first_name }} {{ user.last_name|default:user.username }}</h3>
+          <p>{% if user.profile %}{{ user.profile.bio|default:"No bio available" }}{% else %}No bio available{% endif %}</p>
+          {% if user.profile.photo_genres %}
+            <div class="photo-genres">
+              <span class="genres-label">Photo Genres:</span>
+              {% for genre in user.profile.photo_genres %}
+                <span class="genre-tag">
+                  <span class="genre-icon">{{ genre|genre_icon }}</span>
+                  {{ genre|title }}
+                </span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% if user.profile.favorite_post %}
+  <section class="favorite-post-section">
+    <h2 class="section-title">⭐ Favourite Shot</h2>
+    <div class="favorite-post-container">
+      <div class="favorite-post">
+        <a href="{% url 'view_post' user.profile.favorite_post.id %}">
+          <img src="{{ user.profile.favorite_post.photo.url }}" alt="{{ user.profile.favorite_post.title }}">
+          <div class="favorite-post-info">
+            <h4>{{ user.profile.favorite_post.title }}</h4>
+            {% if user.profile.favorite_post.description %}
+              <p>{{ user.profile.favorite_post.description|truncatewords:15 }}</p>
+            {% endif %}
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="gallery">
+    <h2 class="section-title">All Posts</h2>
+    <div class="gallery">
+      {% for post in user_posts %}
+        <div class="post-item">
+          <a href="{% url 'view_post' post.id %}">
+            <img src="{{ post.photo.url }}" alt="{{ post.title }}">
+            <div class="post-overlay">
+              <h4>{{ post.title }}</h4>
+              {% if post.description %}
+                <p>{{ post.description|truncatewords:10 }}</p>
+              {% endif %}
+            </div>
+          </a>
+        </div>
+      {% empty %}
+        <div class="no-posts">
+          <p>No posts yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer>
+  </footer>
+
+  <script>
+    {% if request.user.is_authenticated and user != request.user %}
+    document.getElementById('followBtn').addEventListener('click', function() {
+      const username = this.getAttribute('data-username');
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/toggle-follow/${username}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        const followBtn = document.getElementById('followBtn');
+        const followersCount = document.getElementById('followersCount');
+        
+        if (data.following) {
+          followBtn.textContent = 'Unfollow';
+          followBtn.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+        } else {
+          followBtn.textContent = 'Follow';
+          followBtn.style.background = 'linear-gradient(135deg, #6a4c93, #4a2c5a)';
+        }
+        followersCount.textContent = data.followers_count;
+      })
+      .catch(error => console.error('Error:', error));
+    });
+    {% endif %}
+  </script>
+
+  <!-- Add CSRF token for AJAX requests -->
+  {% csrf_token %}
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<link rel="stylesheet" href="{% static 'css/post.css' %}" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Post - Aptura</title>
+</head>
+<body>
+
+  <header>
+    <nav class="main-nav">
+      <div class="logo">Aptura</div>
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'profile' %}">Profile</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn">Logout</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <section class="post-container">
+    <div class="post-card">
+      <h1 class="page-title">Create New Post</h1>
+      
+      <form method="post" enctype="multipart/form-data" class="post-form">
+        {% csrf_token %}
+        
+        <div class="form-section">
+          <h2>Upload Photo</h2>
+          <div class="photo-upload-section">
+            <div class="photo-preview">
+              <img id="photoPreview" src="{% static 'images/upload-placeholder.png' %}" alt="Photo Preview" class="preview-image">
+              <div class="upload-overlay" id="uploadOverlay">
+                <div class="upload-icon">📷</div>
+                <p>Click to upload a photo</p>
+              </div>
+            </div>
+            <input type="file" id="postPhoto" name="photo" accept="image/*" class="file-input" required>
+            <label for="postPhoto" class="file-label">
+              <span>Choose Photo</span>
+            </label>
+            <p class="file-info">JPG, PNG or GIF. Max size 10MB.</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Post Details</h2>
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" class="form-input" placeholder="Give your photo a title..." required>
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="4" class="form-textarea" placeholder="Tell us about your photo..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" class="form-input" placeholder="Where was this taken?">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="post-btn">Share Photo</button>
+          <a href="{% url 'home' %}" class="cancel-btn">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+  </footer>
+
+  <script>
+    // Preview uploaded image
+    document.getElementById('postPhoto').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('photoPreview');
+          const overlay = document.getElementById('uploadOverlay');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          overlay.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Click on preview to change photo
+    document.getElementById('photoPreview').addEventListener('click', function() {
+      document.getElementById('postPhoto').click();
+    });
+
+    document.getElementById('uploadOverlay').addEventListener('click', function() {
+      document.getElementById('postPhoto').click();
+    });
+  </script>
+
+</body>
+</html>
+</html>

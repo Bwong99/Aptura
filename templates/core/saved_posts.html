@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<link rel="stylesheet" href="{% static 'css/saved_posts.css' %}" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saved Posts - Aptura</title>
+</head>
+<body>
+
+  <header>
+    <nav class="main-nav">
+      <div class="logo">Aptura</div>
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'create_post' %}">Post</a>
+        <a href="{% url 'profile' %}">Profile</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn">Logout</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <section class="saved-posts-container">
+    <h1 class="page-title">Your Saved Posts</h1>
+    
+    <div class="gallery">
+      {% for post in saved_posts %}
+        <div class="post">
+          <a href="{% url 'view_post' post.id %}">
+            <img src="{{ post.photo.url }}" alt="{{ post.title }}">
+            <div class="post-info">
+              <a href="{% url 'view_user_profile' post.user.username %}" class="photographer">{{ post.user.username }}</a>
+              <span class="photo-title">{{ post.title }}</span>
+            </div>
+          </a>
+        </div>
+      {% empty %}
+        <div class="no-posts-message">
+          <p>You haven't saved any posts yet. <a href="{% url 'home' %}">Explore posts to save!</a></p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer>
+  </footer>
+
+</body>
+</html>

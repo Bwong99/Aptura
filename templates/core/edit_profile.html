@@ -1,0 +1,101 @@
+{% load static %}
+{% load genre_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile - Aptura</title>
+  <link rel="stylesheet" href="{% static 'css/edit_profile.css' %}" />
+</head>
+<body>
+
+  <header>
+    <nav class="main-nav">
+      <div class="logo">Aptura</div>
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'profile' %}">Profile</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="logout-btn">Logout</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <div class="edit-profile-container">
+    <div class="edit-profile-card">
+      <h1 class="page-title">Edit Profile</h1>
+      
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-section">
+          <h2>Personal Information</h2>
+          <div class="form-group">
+            <label for="display_name">Display Name:</label>
+            <input type="text" name="display_name" id="display_name" class="form-input" 
+                   value="{{ user.first_name }} {{ user.last_name }}" placeholder="Your display name">
+          </div>
+
+          <div class="form-group">
+            <label for="bio">Bio:</label>
+            <textarea name="bio" id="bio" class="form-input" rows="4" placeholder="Tell us about yourself...">{% if user.profile %}{{ user.profile.bio }}{% endif %}</textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Photo Genres</h2>
+          <div class="form-group">
+            <label for="photo_genres">Select your photography specialties:</label>
+            <div class="genre-tags-container">
+              {% for value, label in genre_choices %}
+                <label class="genre-tag-option">
+                  <input type="checkbox" name="photo_genres" value="{{ value }}" 
+                         {% if value in user_genres %}checked{% endif %}>
+                  <span class="genre-tag-display">
+                    <span class="genre-icon">{{ value|genre_icon }}</span>
+                    {{ label }}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Profile Photo</h2>
+          <div class="photo-upload-section">
+            <div class="current-photo">
+              {% if user.profile and user.profile.profile_photo %}
+                <img src="{{ user.profile.profile_photo.url }}" alt="Current Profile Photo" class="preview-avatar">
+              {% else %}
+                <img src="{% static 'images/default-avatar.jpg' %}" alt="Default Avatar" class="preview-avatar">
+              {% endif %}
+            </div>
+            <div class="upload-controls">
+              <label for="profile_photo" class="file-label">Choose New Photo</label>
+              <input type="file" name="profile_photo" id="profile_photo" class="file-input" accept="image/*">
+              <div class="file-info">JPG, PNG or GIF (max. 5MB)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="save-btn">Save Changes</button>
+          <a href="{% url 'profile' %}" class="cancel-btn">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+  </footer>
+
+  <script src="{% static 'js/edit_profile.js' %}"></script>
+</body>
+</html>
+
+      

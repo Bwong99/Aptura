@@ -1,0 +1,270 @@
+{% load static %}
+
+<!DOCTYPE html>
+<link rel="stylesheet" href="{% static 'css/home.css' %}" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title> Aptura </title>
+</head>
+<body>
+
+  <header>
+    <h1>Aptura</h1>
+    <nav>
+      <a href="{% url 'index' %}">Welcome</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'profile' %}" class="profile-link">Profile</a>
+        <a href="{% url 'create_post' %}">Post</a>
+        <a href="{% url 'saved_posts' %}" class="saved-link">Saved Posts</a>
+        <div class="notification-container">
+          <button class="notification-bell" id="notificationBell">
+            🔔
+            {% if unread_notifications_count > 0 %}
+              <span class="notification-badge" id="notificationBadge">{{ unread_notifications_count }}</span>
+            {% endif %}
+          </button>
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+              <h3>Notifications</h3>
+              <button class="mark-read-btn" id="markReadBtn">Mark all as read</button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <!-- Notifications will be loaded here -->
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'login' %}" class="login-link">Login</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <section id="hero">
+    <h2>See other photographer's latest work</h2>
+  </section>
+
+  <section id="search">
+    <div class="search-container">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search for photographers..." autocomplete="off">
+        <button id="searchBtn">🔍</button>
+      </div>
+      <div class="search-results" id="searchResults">
+        <!-- Search results will appear here -->
+      </div>
+    </div>
+  </section>
+
+  <section id="explore">
+    <h2>Explore</h2>
+    <div class="gallery">
+      {% for post in posts %}
+        <div class="post">
+          <a href="{% url 'view_post' post.id %}">
+            <img src="{{ post.photo.url }}" alt="{{ post.title }}">
+            <div class="post-info">
+              <a href="{% url 'view_user_profile' post.user.username %}" class="photographer">{{ post.user.username }}</a>
+              <span class="photo-title">{{ post.title }}</span>
+            </div>
+          </a>
+        </div>
+      {% empty %}
+        <div class="no-posts-message">
+          <p>No posts yet. <a href="{% url 'create_post' %}">Be the first to share a photo!</a></p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <script>
+    // Notification functionality
+    {% if user.is_authenticated %}
+    const notificationBell = document.getElementById('notificationBell');
+    const notificationDropdown = document.getElementById('notificationDropdown');
+    const notificationList = document.getElementById('notificationList');
+    const markReadBtn = document.getElementById('markReadBtn');
+
+    notificationBell.addEventListener('click', function(e) {
+      e.stopPropagation();
+      notificationDropdown.style.display = notificationDropdown.style.display === 'block' ? 'none' : 'block';
+      
+      if (notificationDropdown.style.display === 'block') {
+        loadNotifications();
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function() {
+      notificationDropdown.style.display = 'none';
+    });
+
+    notificationDropdown.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+
+    function loadNotifications() {
+      fetch('/get-notifications/')
+        .then(response => response.json())
+        .then(data => {
+          if (data.notifications.length === 0) {
+            notificationList.innerHTML = '<div class="no-notifications">No new notifications</div>';
+          } else {
+            let html = '';
+            data.notifications.forEach(notification => {
+              if (notification.notification_type === 'post' && notification.post_id) {
+                html += `
+                  <div class="notification-item" onclick="goToPost(${notification.post_id})">
+                    <strong>${notification.sender_username}</strong> posted: "${notification.post_title}"
+                    <div class="notification-time">${notification.created_at}</div>
+                  </div>
+                `;
+              } else if (notification.notification_type === 'save' && notification.post_id) {
+                html += `
+                  <div class="notification-item" onclick="goToPost(${notification.post_id})">
+                    <strong>${notification.sender_username}</strong> saved your post: "${notification.post_title}"
+                    <div class="notification-time">${notification.created_at}</div>
+                  </div>
+                `;
+              } else if (notification.notification_type === 'follow') {
+                html += `
+                  <div class="notification-item" onclick="goToProfile('${notification.sender_username}')">
+                    <strong>${notification.sender_username}</strong> started following you
+                    <div class="notification-time">${notification.created_at}</div>
+                  </div>
+                `;
+              }
+            });
+            notificationList.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading notifications:', error);
+          notificationList.innerHTML = '<div class="no-notifications">Error loading notifications</div>';
+        });
+    }
+
+    function goToPost(postId) {
+      window.location.href = `/post/${postId}/`;
+    }
+
+    function goToProfile(username) {
+      window.location.href = `/user/${username}/`;
+    }
+
+    markReadBtn.addEventListener('click', function() {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch('/mark-notifications-read/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const badge = document.querySelector('.notification-badge');
+          if (badge) {
+            badge.remove();
+          }
+          notificationDropdown.style.display = 'none';
+          location.reload();
+        }
+      });
+    });
+    {% endif %}
+
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchResults = document.getElementById('searchResults');
+    let searchTimeout;
+
+    function performSearch(query) {
+      if (query.trim() === '') {
+        searchResults.style.display = 'none';
+        return;
+      }
+
+      fetch(`/search-users/?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          displaySearchResults(data.users);
+        })
+        .catch(error => {
+          console.error('Error searching:', error);
+        });
+    }
+
+    function displaySearchResults(users) {
+      if (users.length === 0) {
+        searchResults.innerHTML = '<div class="no-results">No photographers found</div>';
+        searchResults.style.display = 'block';
+        return;
+      }
+
+      let html = '';
+      users.forEach(user => {
+        html += `
+          <div class="search-result-item" onclick="goToUserProfile('${user.username}')">
+            <div class="user-avatar">
+              ${user.profile_photo ? 
+                `<img src="${user.profile_photo}" alt="${user.username}">` : 
+                '<div class="default-avatar">👤</div>'
+              }
+            </div>
+            <div class="user-info">
+              <strong>${user.username}</strong>
+              <p>${user.display_name || user.username}</p>
+              ${user.bio ? `<span class="user-bio">${user.bio.substring(0, 50)}${user.bio.length > 50 ? '...' : ''}</span>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      
+      searchResults.innerHTML = html;
+      searchResults.style.display = 'block';
+    }
+
+    function goToUserProfile(username) {
+      window.location.href = `/user/${username}/`;
+    }
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      const query = this.value;
+      
+      searchTimeout = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+    });
+
+    searchBtn.addEventListener('click', function() {
+      performSearch(searchInput.value);
+    });
+
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        performSearch(this.value);
+      }
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.search-container')) {
+        searchResults.style.display = 'none';
+      }
+    });
+  </script>
+
+  <!-- Add CSRF token for AJAX requests -->
+  {% csrf_token %}
+
+</body>
+</html>
+
+
+

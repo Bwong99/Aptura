@@ -1,0 +1,718 @@
+{% load static %}
+{% load genre_filters %}
+<!DOCTYPE html>
+<link rel="stylesheet" href="{% static 'css/profile.css' %}" />
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title> WebName </title>
+  
+</head>
+<body>
+
+  <header>
+    <nav class="main-nav">
+      <div class="logo">Aptura</div>
+      <div class="nav-links">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'create_post' %}">Post</a>
+        <a href="{% url 'edit_profile' %}">Edit Profile</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" style="background: none; border: none; color: inherit; text-decoration: underline; cursor: pointer; font: inherit;">Logout</button>
+        </form>
+      </div>
+    </nav>
+  </header>
+
+  <section class="profile-header">
+    <div class="profile-info">
+      <div class="profile-image">
+        {% if user.profile and user.profile.profile_photo %}
+          <img src="{{ user.profile.profile_photo.url }}" alt="Profile Picture" class="avatar">
+        {% else %}
+          <div class="avatar camera-emoji">📷</div>
+        {% endif %}
+      </div>
+      <div class="profile-details">
+        <div class="profile-top">
+          <h1 class="username">{{ user.username }}</h1>
+        </div>
+        <div class="profile-stats">
+          <span><strong>{{ user_posts.count }}</strong> posts</span>
+          <span><strong class="following-count" onclick="showFollowing()">{{ following_count }}</strong> following</span>
+        </div>
+        <div class="profile-bio">
+          <h3>{{ user.first_name }} {{ user.last_name|default:user.username }}</h3>
+          <p>{% if user.profile %}{{ user.profile.bio|default:"No bio available" }}{% else %}No bio available{% endif %}</p>
+          {% if user.profile.photo_genres %}
+            <div class="photo-genres">
+              <span class="genres-label">Photo Genres:</span>
+              {% for genre in user.profile.photo_genres %}
+                <span class="genre-tag">
+                  <span class="genre-icon">{{ genre|genre_icon }}</span>
+                  {{ genre|title }}
+                </span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% if user.profile.favorite_post %}
+  <section class="favorite-post-section">
+    <h2 class="section-title">⭐ Favourite Shot</h2>
+    <div class="favorite-post-container">
+      <div class="favorite-post">
+        <a href="{% url 'view_post' user.profile.favorite_post.id %}">
+          <img src="{{ user.profile.favorite_post.photo.url }}" alt="{{ user.profile.favorite_post.title }}">
+          <div class="favorite-post-info">
+            <h4>{{ user.profile.favorite_post.title }}</h4>
+            {% if user.profile.favorite_post.description %}
+              <p>{{ user.profile.favorite_post.description|truncatewords:15 }}</p>
+            {% endif %}
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="albums-section">
+    <div class="albums-header">
+      <h2 class="section-title">📁 Albums</h2>
+      <button class="create-album-btn" onclick="showCreateAlbumModal()">+ Create Album</button>
+    </div>
+    
+    <div class="albums-grid">
+      {% for album in user_albums %}
+        <div class="album-item">
+          <div class="album-cover">
+            {% if album.cover_photo %}
+              <img src="{{ album.cover_photo.photo.url }}" alt="{{ album.title }}">
+            {% else %}
+              <div class="empty-album">📷</div>
+            {% endif %}
+            <div class="album-overlay">
+              <h4>{{ album.title }}</h4>
+              <p>{{ album.posts.count }} photo{{ album.posts.count|pluralize }}</p>
+            </div>
+          </div>
+          <div class="album-actions">
+            <button class="edit-album-btn" onclick="showEditAlbumModal({{ album.id }})" title="Edit Album">✏️</button>
+            <button class="delete-album-btn" onclick="deleteAlbum({{ album.id }})" title="Delete Album">🗑️</button>
+          </div>
+        </div>
+      {% empty %}
+        <div class="no-albums">
+          <p>No albums yet. Create your first album to organize your photos!</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="gallery">
+    <h2 class="section-title">All Posts</h2>
+    <div class="gallery">
+      {% for post in user_posts %}
+        <div class="post-item">
+          <a href="{% url 'view_post' post.id %}">
+            <img src="{{ post.photo.url }}" alt="{{ post.title }}">
+            <div class="post-overlay">
+              <h4>{{ post.title }}</h4>
+              {% if post.description %}
+                <p>{{ post.description|truncatewords:10 }}</p>
+              {% endif %}
+            </div>
+          </a>
+          {% if user == request.user %}
+            <button class="delete-post-btn" onclick="confirmDeleteFromProfile({{ post.id }})" title="Delete Post">
+              🗑️
+            </button>
+            <button class="favorite-post-btn {% if user.profile.favorite_post == post %}active{% endif %}" 
+                    onclick="toggleFavorite({{ post.id }})" 
+                    title="{% if user.profile.favorite_post == post %}Remove from favorite{% else %}Set as favorite{% endif %}">
+              ⭐
+            </button>
+            <button class="add-to-album-btn" onclick="showAlbumModal({{ post.id }})" title="Add to Album">
+              📁
+            </button>
+            <button class="edit-post-btn" onclick="showEditPostModal({{ post.id }})" title="Edit Post">
+              ✏️
+            </button>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="no-posts">
+          <p>No posts yet. <a href="{% url 'create_post' %}">Share your first photo!</a></p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Delete Post</h3>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button class="delete-btn" onclick="deletePostFromProfile()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Album Confirmation Modal -->
+  <div id="deleteAlbumModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Delete Album</h3>
+        <button class="close-btn" onclick="closeDeleteAlbumModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this album? This will not delete the photos.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeDeleteAlbumModal()">Cancel</button>
+        <button class="delete-btn" onclick="confirmDeleteAlbum()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Following Modal -->
+  <div id="followingModal" class="modal">
+    <div class="modal-content following-modal">
+      <div class="modal-header">
+        <h3>Following</h3>
+        <button class="close-btn" onclick="closeFollowingModal()">&times;</button>
+      </div>
+      <div class="following-list" id="followingList">
+        <!-- Following users will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Album Modal -->
+  <div id="createAlbumModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create New Album</h3>
+        <button class="close-btn" onclick="closeCreateAlbumModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="albumTitle">Album Title:</label>
+          <input type="text" id="albumTitle" placeholder="Enter album title">
+        </div>
+        <div class="form-group">
+          <label for="albumDescription">Description (optional):</label>
+          <textarea id="albumDescription" rows="3" placeholder="Describe your album"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeCreateAlbumModal()">Cancel</button>
+        <button class="create-btn" onclick="createAlbum()">Create Album</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add to Album Modal -->
+  <div id="albumModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add to Album</h3>
+        <button class="close-btn" onclick="closeAlbumModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="album-list" id="albumList">
+          <!-- Albums will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Album Modal -->
+  <div id="editAlbumModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Album</h3>
+        <button class="close-btn" onclick="closeEditAlbumModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editAlbumTitle">Album Title:</label>
+          <input type="text" id="editAlbumTitle" placeholder="Enter album title">
+        </div>
+        <div class="form-group">
+          <label for="editAlbumDescription">Description (optional):</label>
+          <textarea id="editAlbumDescription" rows="3" placeholder="Describe your album"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeEditAlbumModal()">Cancel</button>
+        <button class="create-btn" onclick="updateAlbum()">Update Album</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Post Modal -->
+  <div id="editPostModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Post</h3>
+        <button class="close-btn" onclick="closeEditPostModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editPostTitle">Post Title:</label>
+          <input type="text" id="editPostTitle" placeholder="Enter post title">
+        </div>
+        <div class="form-group">
+          <label for="editPostDescription">Description (optional):</label>
+          <textarea id="editPostDescription" rows="3" placeholder="Describe your post"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="editPostLocation">Location (optional):</label>
+          <input type="text" id="editPostLocation" placeholder="Where was this taken?">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeEditPostModal()">Cancel</button>
+        <button class="create-btn" onclick="updatePost()">Update Post</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+  </footer>
+
+  <script>
+    let postToDelete = null;
+    let albumToDelete = null;
+    let selectedPostId = null;
+    let editingAlbumId = null;
+    let editingPostId = null;
+
+    function confirmDeleteFromProfile(postId) {
+      postToDelete = postId;
+      document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      postToDelete = null;
+    }
+
+    function deletePostFromProfile() {
+      if (!postToDelete) return;
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/delete-post/${postToDelete}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => {
+        if (response.ok) {
+          location.reload();
+        } else {
+          alert('Error deleting post');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting post');
+      });
+    }
+
+    function toggleFavorite(postId) {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/set-favorite/${postId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error setting favorite post');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error setting favorite post');
+      });
+    }
+
+    // Following modal functions
+    function showFollowing() {
+      document.getElementById('followingModal').style.display = 'block';
+      loadFollowing();
+    }
+
+    function closeFollowingModal() {
+      document.getElementById('followingModal').style.display = 'none';
+    }
+
+    function loadFollowing() {
+      fetch('/get-following/')
+        .then(response => response.json())
+        .then(data => {
+          const followingList = document.getElementById('followingList');
+          if (data.following.length === 0) {
+            followingList.innerHTML = '<div class="no-following">Not following anyone yet</div>';
+          } else {
+            let html = '';
+            data.following.forEach(user => {
+              html += `
+                <div class="following-item" onclick="goToUserProfile('${user.username}')">
+                  <div class="user-avatar-small">
+                    ${user.profile_photo ? 
+                      `<img src="${user.profile_photo}" alt="${user.username}">` : 
+                      '<div class="default-avatar">📷</div>'
+                    }
+                  </div>
+                  <div class="user-info-small">
+                    <strong>${user.username}</strong>
+                    <p>${user.display_name || user.username}</p>
+                  </div>
+                </div>
+              `;
+            });
+            followingList.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading following:', error);
+          document.getElementById('followingList').innerHTML = '<div class="no-following">Error loading following list</div>';
+        });
+    }
+
+    function goToUserProfile(username) {
+      window.location.href = `/user/${username}/`;
+    }
+
+    function showCreateAlbumModal() {
+      document.getElementById('createAlbumModal').style.display = 'block';
+    }
+
+    function closeCreateAlbumModal() {
+      document.getElementById('createAlbumModal').style.display = 'none';
+      document.getElementById('albumTitle').value = '';
+      document.getElementById('albumDescription').value = '';
+    }
+
+    function createAlbum() {
+      const title = document.getElementById('albumTitle').value.trim();
+      const description = document.getElementById('albumDescription').value.trim();
+      
+      if (!title) {
+        alert('Please enter an album title');
+        return;
+      }
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch('/create-album/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeCreateAlbumModal();
+          location.reload();
+        } else {
+          alert('Error creating album');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating album');
+      });
+    }
+
+    function showAlbumModal(postId) {
+      selectedPostId = postId;
+      loadAlbums();
+      document.getElementById('albumModal').style.display = 'block';
+    }
+
+    function closeAlbumModal() {
+      document.getElementById('albumModal').style.display = 'none';
+      selectedPostId = null;
+    }
+
+    function loadAlbums() {
+      const albumList = document.getElementById('albumList');
+      albumList.innerHTML = '<p>Loading albums...</p>';
+      
+      fetch('/get-albums/')
+        .then(response => response.json())
+        .then(data => {
+          albumList.innerHTML = '';
+          
+          if (data.albums && data.albums.length > 0) {
+            data.albums.forEach(album => {
+              const albumItem = document.createElement('div');
+              albumItem.className = 'album-option';
+              albumItem.innerHTML = `
+                <span>${album.title}</span>
+                <button onclick="addToAlbum(${album.id})" class="add-btn">Add</button>
+              `;
+              albumList.appendChild(albumItem);
+            });
+          } else {
+            albumList.innerHTML = '<p>No albums yet. Create an album first!</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading albums:', error);
+          albumList.innerHTML = '<p>Error loading albums</p>';
+        });
+    }
+
+    function addToAlbum(albumId) {
+      if (!selectedPostId) return;
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/add-to-album/${selectedPostId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `album_id=${albumId}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeAlbumModal();
+          alert(`Photo ${data.added ? 'added to' : 'removed from'} album: ${data.album_title}`);
+          location.reload();
+        } else {
+          alert('Error updating album');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating album');
+      });
+    }
+
+    function deleteAlbum(albumId) {
+      albumToDelete = albumId;
+      document.getElementById('deleteAlbumModal').style.display = 'block';
+    }
+
+    function closeDeleteAlbumModal() {
+      document.getElementById('deleteAlbumModal').style.display = 'none';
+      albumToDelete = null;
+    }
+
+    function confirmDeleteAlbum() {
+      if (!albumToDelete) return;
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/delete-album/${albumToDelete}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeDeleteAlbumModal();
+          location.reload();
+        } else {
+          alert('Error deleting album');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting album');
+      });
+    }
+
+    function showEditAlbumModal(albumId) {
+      editingAlbumId = albumId;
+      
+      // Load current album data
+      fetch(`/edit-album/${albumId}/`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('editAlbumTitle').value = data.title;
+          document.getElementById('editAlbumDescription').value = data.description || '';
+          document.getElementById('editAlbumModal').style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error loading album:', error);
+          alert('Error loading album data');
+        });
+    }
+
+    function closeEditAlbumModal() {
+      document.getElementById('editAlbumModal').style.display = 'none';
+      editingAlbumId = null;
+      document.getElementById('editAlbumTitle').value = '';
+      document.getElementById('editAlbumDescription').value = '';
+    }
+
+    function updateAlbum() {
+      if (!editingAlbumId) return;
+      
+      const title = document.getElementById('editAlbumTitle').value.trim();
+      const description = document.getElementById('editAlbumDescription').value.trim();
+      
+      if (!title) {
+        alert('Please enter an album title');
+        return;
+      }
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/edit-album/${editingAlbumId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeEditAlbumModal();
+          location.reload();
+        } else {
+          alert('Error updating album');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating album');
+      });
+    }
+
+    function showEditPostModal(postId) {
+      editingPostId = postId;
+      
+      // Load current post data
+      fetch(`/edit-post/${postId}/`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('editPostTitle').value = data.title;
+          document.getElementById('editPostDescription').value = data.description || '';
+          document.getElementById('editPostLocation').value = data.location || '';
+          document.getElementById('editPostModal').style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error loading post:', error);
+          alert('Error loading post data');
+        });
+    }
+
+    function closeEditPostModal() {
+      document.getElementById('editPostModal').style.display = 'none';
+      editingPostId = null;
+      document.getElementById('editPostTitle').value = '';
+      document.getElementById('editPostDescription').value = '';
+      document.getElementById('editPostLocation').value = '';
+    }
+
+    function updatePost() {
+      if (!editingPostId) return;
+      
+      const title = document.getElementById('editPostTitle').value.trim();
+      const description = document.getElementById('editPostDescription').value.trim();
+      const location = document.getElementById('editPostLocation').value.trim();
+      
+      if (!title) {
+        alert('Please enter a post title');
+        return;
+      }
+
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      
+      fetch(`/edit-post/${editingPostId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeEditPostModal();
+          location.reload();
+        } else {
+          alert('Error updating post');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating post');
+      });
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+      const deleteModal = document.getElementById('deleteModal');
+      const deleteAlbumModal = document.getElementById('deleteAlbumModal');
+      const createModal = document.getElementById('createAlbumModal');
+      const albumModal = document.getElementById('albumModal');
+      const editAlbumModal = document.getElementById('editAlbumModal');
+      const editPostModal = document.getElementById('editPostModal');
+      
+      if (event.target == deleteModal) {
+        closeModal();
+      }
+      if (event.target == deleteAlbumModal) {
+        closeDeleteAlbumModal();
+      }
+      if (event.target == createModal) {
+        closeCreateAlbumModal();
+      }
+      if (event.target == albumModal) {
+        closeAlbumModal();
+      }
+      if (event.target == editAlbumModal) {
+        closeEditAlbumModal();
+      }
+      if (event.target == editPostModal) {
+        closeEditPostModal();
+      }
+    }
+  </script>
+
+  <!-- Add CSRF token for AJAX requests -->
+  {% csrf_token %}
+
+</body>
+</html>
