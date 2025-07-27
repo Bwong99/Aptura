@@ -487,6 +487,135 @@ footer {
   font-style: italic;
 }
 
+/* Page info */
+.page-info {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Pagination container */
+.pagination-container {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Pagination controls */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 16px 24px;
+  box-shadow: 0 4px 20px rgba(106, 76, 147, 0.1);
+  border: 1px solid rgba(106, 76, 147, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Page buttons styled to match the theme */
+.page-btn {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #6a4c93 0%, #9370db 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  border-radius: 10px;
+  margin: 0 2px;
+  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(106, 76, 147, 0.15);
+  cursor: pointer;
+  text-decoration: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 0.02em;
+}
+
+.page-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.page-btn:hover::before {
+  left: 100%;
+}
+
+.page-btn:hover, .page-btn:focus {
+  background: linear-gradient(135deg, #4a2c5a 0%, #7b68ee 100%);
+  color: white;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(106, 76, 147, 0.25);
+  text-decoration: none;
+}
+
+.current-page {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 248, 248, 0.95) 100%);
+  color: #6a4c93;
+  border-radius: 10px;
+  font-weight: 700;
+  border: 2px solid #6a4c93;
+  margin: 0 2px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(106, 76, 147, 0.2);
+  letter-spacing: 0.02em;
+  position: relative;
+}
+
+.current-page::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 60%;
+  height: 2px;
+  background: #6a4c93;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 6px;
+  margin: 0 12px;
+}
+
+/* Hide infinite scroll elements and toggle */
+.loading-indicator,
+.end-of-posts,
+#scrollTrigger,
+.view-toggle,
+.toggle-btn {
+  display: none !important;
+}
+
+/* Error message styling */
+.error-message {
+  text-align: center;
+  padding: 15px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  margin: 10px 0;
+  backdrop-filter: blur(10px);
+}
+
 /* Animations */
 @keyframes slideDown {
   from {
@@ -631,5 +760,56 @@ footer {
   
   .notification-container {
     margin-left: 0.5rem;
+  }
+  
+  .pagination-controls {
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  
+  .page-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .current-page {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .first-page,
+  .last-page {
+    display: none;
+  }
+  
+  .page-numbers {
+    margin: 0 8px;
+    gap: 4px;
+  }
+  
+  .pagination-container {
+    gap: 15px;
+    margin-top: 30px;
+  }
+  
+  .pagination-controls {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+  
+  .page-numbers {
+    order: -1;
+    margin: 0;
+  }
+  
+  .page-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .current-page {
+    padding: 6px 10px;
+    font-size: 0.75rem;
   }
 }

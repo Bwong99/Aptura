@@ -561,6 +561,13 @@ footer {
   margin: 0 10px;
 }
 
+/* Hide infinite scroll elements by default */
+.loading-indicator,
+.end-of-posts,
+#scrollTrigger {
+  display: none !important;
+}
+
 /* Remove view-toggle styles */
 .view-toggle, .toggle-btn {
   display: none !important;

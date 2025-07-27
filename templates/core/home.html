@@ -111,20 +111,6 @@
         </div>
       </div>
     {% endif %}
-    
-    <!-- Loading indicator for infinite scroll -->
-    <div class="loading-indicator" id="loadingIndicator" style="display: none;">
-      <div class="spinner"></div>
-      <p>Loading more posts...</p>
-    </div>
-    
-    <!-- End of posts indicator -->
-    <div class="end-of-posts" id="endOfPosts" style="display: none;">
-      <p>No more posts to show</p>
-    </div>
-    
-    <!-- Infinite scroll trigger -->
-    <div id="scrollTrigger" style="height: 20px;"></div>
   </section>
 
   <script>
@@ -332,6 +318,11 @@
       threshold: 0.1
     });
     
+    // Only enable infinite scroll if explicitly set in localStorage
+    if (infiniteScrollEnabled) {
+      if (scrollTrigger) observer.observe(scrollTrigger);
+    }
+    
     function loadMorePosts() {
       if (isLoading || !hasMorePosts || !infiniteScrollEnabled) return;
       
@@ -366,45 +357,6 @@
           if (gallery) {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.innerHTML = '<p>Failed to load more posts. Please try again.</p>';
-            gallery.appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 3000);
-          }
-        })
-        .finally(() => {
-          isLoading = false;
-          if (loadingIndicator) loadingIndicator.style.display = 'none';
-        });
-    }
-    
-    function appendPosts(posts) {
-      const noPostsMessage = document.querySelector('.no-posts-message');
-      if (noPostsMessage) {
-        noPostsMessage.remove();
-      }
-      
-      posts.forEach(post => {
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        postElement.innerHTML = `
-          <a href="/post/${post.id}/">
-            <img src="${post.photo_url}" alt="${post.title}" loading="lazy">
-            <div class="post-info">
-              <a href="/user/${post.username}/" class="photographer">${post.username}</a>
-              <span class="photo-title">${post.title}</span>
-            </div>
-          </a>
-        `;
-        if (gallery) gallery.appendChild(postElement);
-      });
-    }
-  </script>
-
-  <!-- Add CSRF token for AJAX requests -->
-  {% csrf_token %}
-
-</body>
-</html>
             errorDiv.innerHTML = '<p>Failed to load more posts. Please try again.</p>';
             gallery.appendChild(errorDiv);
             setTimeout(() => errorDiv.remove(), 3000);
