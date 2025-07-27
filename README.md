@@ -13,11 +13,11 @@ Photography and creative photo sharing platform
 - 💻 **Code blocks** with automatic syntax highlighting for most programming languages  
 ---
 ### 🖼️Demos/Screenshots
-<img src="Aptura 2.png" width="1200" />
-<img src="Aptura 1.png" width="1200" />
-<img src="Aptura 3.png" width="1200" />
-<img src="Aptura 4.png" width="1200" />
-<img src="Aptura 5.png" width="1200" />
+<img src="static/images/Aptura 2.png" width="1200" />
+<img src="static/images/Aptura 1.png" width="1200" />
+<img src="static/images/Aptura 3.png" width="1200" />
+<img src="static/images/Aptura 4.png" width="1200" />
+<img src="static/images/Aptura 5.png" width="1200" />
 
 ---
 ## 🧰 Tech Stack
