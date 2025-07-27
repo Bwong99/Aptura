@@ -7,10 +7,9 @@ Photography and creative photo sharing platform
 ---
 
 ## 🚀 Features
-- 🔄 **Real-time sync** with database 
-- 🎨 **Modern UI/UX** with responsive design  
+- 🔄 **Real-time sync** PostgreSQL Database
+- 🎨 **Modern UI/UX** responsive design  
 - 👥 **Live collaboration** through follows and post saves  
-- 💻 **Code blocks** with automatic syntax highlighting for most programming languages  
 ---
 ### 🖼️Demos/Screenshots
 <img src="static/images/Aptura 2.png" width="1200" />
@@ -24,7 +23,7 @@ Photography and creative photo sharing platform
 Backend:
 - 🐍 Python - Programming Language
 - 🎯 Django - Web Framework 
-- 🗄️ SQLite - Database
+- 🗄️ PostgreSQL - Database
 
 Frontend
 - 🌐 HTML - Markup
