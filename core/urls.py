@@ -25,4 +25,5 @@ urlpatterns = [
     path('edit-album/<int:album_id>/', views.edit_album, name='edit_album'),
     path('search-users/', views.search_users, name='search_users'),
     path('get-albums/', views.get_albums, name='get_albums'),
+    path('load-more-posts/', views.load_more_posts, name='load_more_posts'),
 ]

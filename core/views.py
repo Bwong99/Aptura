@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_GET
 from .models import UserProfile, Post, Save, Follow, Notification, Album
 
 # Create your views here.
@@ -89,23 +91,75 @@ def profile(request):
     return render(request, 'core/profile.html', context)
 
 def home(request):
+    posts_per_page = 12  # Number of posts per page
+    page_number = request.GET.get('page', 1)
+    
     if request.user.is_authenticated:
         # Show recent posts from other users (not the current user)
-        all_posts = Post.objects.exclude(user=request.user).order_by('-created_at')[:20]
+        all_posts = Post.objects.exclude(user=request.user).select_related('user').order_by('-created_at')
         unread_notifications_count = Notification.objects.filter(
             recipient=request.user, 
             is_read=False
         ).count()
     else:
         # Show all recent posts for non-authenticated users
-        all_posts = Post.objects.all().order_by('-created_at')[:20]
+        all_posts = Post.objects.select_related('user').order_by('-created_at')
         unread_notifications_count = 0
     
+    # Create paginator
+    paginator = Paginator(all_posts, posts_per_page)
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'posts': all_posts,
-        'unread_notifications_count': unread_notifications_count
+        'posts': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'unread_notifications_count': unread_notifications_count,
+        'is_paginated': paginator.num_pages > 1,
     }
     return render(request, 'core/home.html', context)
+
+@require_GET
+def load_more_posts(request):
+    """AJAX view to load more posts for infinite scroll"""
+    page_number = request.GET.get('page', 1)
+    posts_per_page = 12  # Same as home view
+    
+    try:
+        if request.user.is_authenticated:
+            # Show posts from other users (not the current user)
+            all_posts = Post.objects.exclude(user=request.user).select_related('user').order_by('-created_at')
+        else:
+            # Show all posts for non-authenticated users
+            all_posts = Post.objects.select_related('user').order_by('-created_at')
+        
+        # Create paginator
+        paginator = Paginator(all_posts, posts_per_page)
+        page_obj = paginator.get_page(page_number)
+        
+        # Prepare post data for JSON response
+        posts_data = []
+        for post in page_obj:
+            posts_data.append({
+                'id': post.id,
+                'title': post.title,
+                'photo_url': post.photo.url if post.photo else '',
+                'username': post.user.username,
+                'created_at': post.created_at.isoformat(),
+            })
+        
+        return JsonResponse({
+            'posts': posts_data,
+            'has_more': page_obj.has_next(),
+            'current_page': page_obj.number,
+            'total_pages': paginator.num_pages,
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': 'Failed to load posts',
+            'message': str(e)
+        }, status=500)
 
 def post1(request):
     return render(request, 'core/post1.html')

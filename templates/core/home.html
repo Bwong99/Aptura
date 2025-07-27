@@ -59,7 +59,15 @@
 
   <section id="explore">
     <h2>Explore</h2>
-    <div class="gallery">
+    
+    <!-- Page info -->
+    {% if is_paginated %}
+      <div class="page-info">
+        <p>Page {{ page_obj.number }} of {{ paginator.num_pages }} ({{ paginator.count }} total posts)</p>
+      </div>
+    {% endif %}
+    
+    <div class="gallery" id="gallery">
       {% for post in posts %}
         <div class="post">
           <a href="{% url 'view_post' post.id %}">
@@ -76,6 +84,54 @@
         </div>
       {% endfor %}
     </div>
+    
+    <!-- Pagination Controls -->
+    {% if is_paginated %}
+      <div class="pagination-container">
+        <div class="pagination-controls">
+          {% if page_obj.has_previous %}
+            <a href="?page=1" class="page-btn first-page">&laquo; First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="page-btn prev-page">&lsaquo; Previous</a>
+          {% endif %}
+          
+          <div class="page-numbers">
+            {% for num in paginator.page_range %}
+              {% if page_obj.number == num %}
+                <span class="current-page">{{ num }}</span>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}" class="page-btn">{{ num }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+          
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-btn next-page">Next &rsaquo;</a>
+            <a href="?page={{ paginator.num_pages }}" class="page-btn last-page">Last &raquo;</a>
+          {% endif %}
+        </div>
+        
+        <!-- Toggle between pagination and infinite scroll -->
+        <div class="view-toggle">
+          <button id="toggleInfiniteScroll" class="toggle-btn">
+            <span id="toggleText">Switch to Infinite Scroll</span>
+          </button>
+        </div>
+      </div>
+    {% endif %}
+    
+    <!-- Loading indicator for infinite scroll -->
+    <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+      <div class="spinner"></div>
+      <p>Loading more posts...</p>
+    </div>
+    
+    <!-- End of posts indicator -->
+    <div class="end-of-posts" id="endOfPosts" style="display: none;">
+      <p>No more posts to show</p>
+    </div>
+    
+    <!-- Infinite scroll trigger -->
+    <div id="scrollTrigger" style="height: 20px;"></div>
   </section>
 
   <script>
@@ -258,6 +314,129 @@
         searchResults.style.display = 'none';
       }
     });
+
+    // Pagination and infinite scroll functionality
+    let infiniteScrollEnabled = localStorage.getItem('infiniteScrollEnabled') === 'true';
+    let currentPage = {% if page_obj %}{{ page_obj.number }}{% else %}1{% endif %};
+    let totalPages = {% if paginator %}{{ paginator.num_pages }}{% else %}1{% endif %};
+    let isLoading = false;
+    let hasMorePosts = {% if page_obj %}{{ page_obj.has_next|yesno:"true,false" }}{% else %}false{% endif %};
+    
+    const gallery = document.getElementById('gallery');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const endOfPosts = document.getElementById('endOfPosts');
+    const scrollTrigger = document.getElementById('scrollTrigger');
+    const paginationContainer = document.querySelector('.pagination-container');
+    const toggleBtn = document.getElementById('toggleInfiniteScroll');
+    const toggleText = document.getElementById('toggleText');
+    
+    // Initialize view mode only if toggle button exists
+    if (toggleBtn && toggleText) {
+      updateViewMode();
+    }
+    
+    // Intersection Observer for infinite scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && infiniteScrollEnabled && !isLoading && hasMorePosts) {
+          loadMorePosts();
+        }
+      });
+    }, {
+      threshold: 0.1
+    });
+    
+    function updateViewMode() {
+      if (infiniteScrollEnabled) {
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        if (scrollTrigger) observer.observe(scrollTrigger);
+        if (toggleText) toggleText.textContent = 'Switch to Pagination';
+      } else {
+        if (paginationContainer) paginationContainer.style.display = 'block';
+        if (scrollTrigger) observer.unobserve(scrollTrigger);
+        if (toggleText) toggleText.textContent = 'Switch to Infinite Scroll';
+      }
+    }
+    
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        infiniteScrollEnabled = !infiniteScrollEnabled;
+        localStorage.setItem('infiniteScrollEnabled', infiniteScrollEnabled);
+        updateViewMode();
+        
+        if (!infiniteScrollEnabled) {
+          // Reload page to show proper pagination
+          window.location.reload();
+        }
+      });
+    }
+    
+    function loadMorePosts() {
+      if (isLoading || !hasMorePosts || !infiniteScrollEnabled) return;
+      
+      isLoading = true;
+      if (loadingIndicator) loadingIndicator.style.display = 'block';
+      currentPage++;
+      
+      fetch(`/load-more-posts/?page=${currentPage}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.posts && data.posts.length > 0) {
+            appendPosts(data.posts);
+            hasMorePosts = data.has_more;
+          } else {
+            hasMorePosts = false;
+          }
+          
+          if (!hasMorePosts) {
+            if (endOfPosts) endOfPosts.style.display = 'block';
+            if (scrollTrigger) observer.unobserve(scrollTrigger);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading more posts:', error);
+          currentPage--; // Revert page increment on error
+          // Show user-friendly error message
+          if (gallery) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = '<p>Failed to load more posts. Please try again.</p>';
+            gallery.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+          }
+        })
+        .finally(() => {
+          isLoading = false;
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+        });
+    }
+    
+    function appendPosts(posts) {
+      const noPostsMessage = document.querySelector('.no-posts-message');
+      if (noPostsMessage) {
+        noPostsMessage.remove();
+      }
+      
+      posts.forEach(post => {
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        postElement.innerHTML = `
+          <a href="/post/${post.id}/">
+            <img src="${post.photo_url}" alt="${post.title}" loading="lazy">
+            <div class="post-info">
+              <a href="/user/${post.username}/" class="photographer">${post.username}</a>
+              <span class="photo-title">${post.title}</span>
+            </div>
+          </a>
+        `;
+        if (gallery) gallery.appendChild(postElement);
+      });
+    }
   </script>
 
   <!-- Add CSRF token for AJAX requests -->
