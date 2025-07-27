@@ -1,6 +1,6 @@
 # Aptura 
 
-**ACCESS WEBSITE HERE [here](https://aptura-dysh.onrender.com/)**
+**ACCESS WEBSITE [HERE](https://aptura-dysh.onrender.com/)**
 
 Photography and creative photo sharing platform  
 
