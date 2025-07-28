@@ -7,6 +7,7 @@ Photography and creative photo sharing platform
 ---
 
 ## 🚀 Features
+- 📲 **Mobile Compatible** Works seemlessly on mobile devices
 - 🔄 **Real-time sync** PostgreSQL Database
 - 🎨 **Interactive UI/UX** responsive design  
 - 👥 **Live collaboration** through follows and post saves
@@ -31,7 +32,7 @@ Website Deployment
 ---
 
 Features Coming Soon
-- 📜 Infinite scroll Wheel - Explore or revisit older posts on the home page
+- 📜 Explore or revisit older posts on the home page
 
 ---
 
@@ -40,4 +41,3 @@ Features Coming Soon
 <img src="static/images/Aptura 1.png" width="1200" />
 <img src="static/images/Aptura 3.png" width="1200" />
 <img src="static/images/Aptura 4.png" width="1200" />
-<img src="static/images/Aptura 5.png" width="1200" />
