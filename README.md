@@ -1,6 +1,7 @@
 # Aptura 
 
-**ACCESS WEBSITE [HERE](https://aptura-dysh.onrender.com/)**
+**ACCESS WEBSITE [HERE](https://aptura-dysh.onrender.com/)** 
+NOTE: Website is currently down due to free version or Render expiring 
 
 Photography and creative photo sharing platform  
 
